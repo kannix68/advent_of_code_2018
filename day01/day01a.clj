@@ -44,7 +44,7 @@
   expected 3
   ]
   (println "test-string\n" teststr)
-  (println "list" lst)
+  (println "list" lst "list-count:" (count lst))
   (println "freqsum" freqsum)
   (assert-msg (= result expected) (str "test-result " result " should be " expected))
 )
@@ -59,5 +59,6 @@
   ;(println (str "input   #" collen)  (take 2 lol)   "..." (take-last 1 lol))
   ;(println (str "transpd #" linelen) (take 2 loltr) "..." (take-last 1 loltr))
   ;(println "data line-len=" linelen ", col-len=" collen)
+  (println "list" lst "list-count:" (count lst))
   (println "result :=> " result)
 )

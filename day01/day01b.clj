@@ -1,7 +1,14 @@
 #!/usr/bin/env clojure
 
-; Advent of code 2018, AoC day 1 puzzle 1.
+; Advent of code 2018, AoC day 1 puzzle 2.
 ; This solution (clojure 1.8) by kannix68, @ 2018-12-01.
+; Save your specific input as "day##.in".
+;
+; tips:
+; * [clojure - Returning duplicates in a sequence](<https://stackoverflow.com/questions/8056645/returning-duplicates-in-a-sequence>)
+; * find-first: [clojure - How to stop iterating a sequence when a condition is met](https://stackoverflow.com/questions/11866446/how-to-stop-iterating-a-sequence-when-a-condition-is-met)
+;     * [find first match in a sequence](<https://groups.google.com/forum/#!topic/clojure/ojh-3_VXoac>)
+; * could be useful: [reduced - clojure.core](<https://clojuredocs.org/clojure.core/reduced>)
 
 (require '[clojure.string :as str]) ; clj str ops
 
@@ -19,14 +26,6 @@
   ;(map #(seq (str/split % #"")) (str/split str #"\r?\n"))
   (str/split str #"\r?\n")
 )
-;(defn transpose-lol [lol]
-;  "transpose rows <=> columns of a list-of-lists"
-;  (apply map list lol)
-;)
-;(defn get-max-freq-colelems [loltr]
-;  "get a list of the keys having max frequency for each sequenc in list-of-sequences."
-;  (map #(key (apply min-key val (frequencies %))) loltr) ; use/map closure #() on each list-elem
-;)
 
 ;** test data (as a var(iable))
 (def teststr1 "+1
@@ -44,19 +43,19 @@
 -4")
 
 ;** MAIN
-; frequencies are NOT lazy
+; frequencies is NOT lazy
 
-; NOT lazy
-(defn dups [seq]
-  (for [[id freq] (frequencies seq)  ;; get the frequencies, destructure
-        :when (> freq 1)]            ;; this is the filter condition
-   id))                              ;; just need the id, not the frequency
+;* ; NOT lazy
+; (defn dups [seq]
+;   (for [[id freq] (frequencies seq)  ;; get the frequencies, destructure
+;         :when (> freq 1)]            ;; this is the filter condition
+;    id))                              ;; just need the id, not the frequency
 
-(defn get-cycle [xs]
-  (first (filter #(number? (first %))
-    (reductions
-      (fn [[m i] x] (if-let [xat (m x)] [xat i] [(assoc m x i) (inc i)]))
-      [(hash-map) 0] xs))))
+; (defn get-cycle [xs]
+;   (first (filter #(number? (first %))
+;     (reductions
+;       (fn [[m i] x] (if-let [xat (m x)] [xat i] [(assoc m x i) (inc i)]))
+;       [(hash-map) 0] xs))))
 
 (defn first-dup [coll]
   (reduce (fn [acc [idx x]]
@@ -72,8 +71,8 @@
     lst (map read-string (explode-str input))
     freqsum (apply + lst) ; apply forces coercion/reduction
     lstcycle (conj (cycle lst) 0)
-    cumsumlst (reductions + lstcycle)
-    fidx (first (first-dup cumsumlst))
+    cumsumlst (reductions + lstcycle) ; running sums as sequence
+    fidx (first (first-dup cumsumlst)) ; use defined first-dup fn
     fval (nth cumsumlst fidx)
     result fval
     ]
@@ -109,7 +108,7 @@
 ; solve my specific data input
 (let [
   datastr (slurp "day01.in")
-  result2 (solve datastr)
+  result (solve datastr)
   ]
-  (println "result :=>" result2)
+  (println "result :=>" result)
 )
