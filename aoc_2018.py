@@ -16,6 +16,7 @@ import logging
 
 import lib.aochelper as aoc
 from lib.aochelper import map_list as mapl
+from lib.aochelper import filter_list as filterl
 
 print("Python version:", sys.version)
 print("Version info:", sys.version_info)
@@ -23,6 +24,9 @@ print("Version info:", sys.version_info)
 log = aoc.getLogger(__name__)
 #log.setLevel(logging.DEBUG) # std: logging.INFO
 print(f"initial log-level={log.getEffectiveLevel()}")
+
+EXEC_RESOURCE_HOGS = False
+EXEC_DOUBTFUL = False
 
 
 # ## Problem domain code
@@ -402,12 +406,222 @@ print("Day 07 b, # TODO")
 # TODO
 
 
-# ### Day 10
+# ### Day 10: The Stars Align
 
 # In[ ]:
 
 
-# TODO
+import copy # for deepcopy
+
+class CellularWorldBase:
+  """Base class for 2d-grid cellular world. E.g. for cellular automata."""
+  def __init__(self, world):
+    """World object constructor, world has to be given as a list-of-lists of chars."""
+    self.world = world
+    self.dim = [len(world[0]), len(world)]
+    log.info(f'[CellularWorld] new dim={self.dim}')
+    self.world = world
+  
+  def repr(self):
+    """Return representation str (can be used for printing)."""
+    l = []
+    for line in self.world:
+      l.append( str.join('', line) )
+    return str.join("\n", l)
+  
+  def set_world(self, world):
+    self.world = world
+    self.dim = [len(world[0]), len(world)]
+
+  def get_neighbors(self, x, y):
+    """Get cell's surrounding neighbors, for cell iteration."""
+    neighbors = ''
+    #for nx in range(x-1, x+2):
+    #  for ny in range(y-1, y+2):
+    #    if condition:
+    #      neighbors += self.world[ny][nx]
+    return neighbors
+
+  def iterate_cell(self):
+    neighbors = self.get_neighbors(x, y)
+    #val = self.world[y][x]
+    #if cond1:
+    #  next_world[y][x] = '*'
+    #elif cond2:
+    #  world2[y][x] = '#'
+    return self.world[y][x]
+  
+  def iterate(self, n=1):
+    for i in range(n):
+      next_world = copy.deepcopy(self.world)
+      for y in range(self.dim[1]):
+        for x in range(self.dim[0]):
+          nextworld[y][x] = self.iterate_cell(x, y)
+      self.set_world(next_world)
+
+
+# In[ ]:
+
+
+class CellularWorldDay10(CellularWorldBase):
+  True
+
+
+# In[ ]:
+
+
+tests = """
+........#.............
+................#.....
+.........#.#..#.......
+......................
+#..........#.#.......#
+...............#......
+....#.................
+..#.#....#............
+.......#..............
+......#...............
+...#...#.#...#........
+....#..#..#.........#.
+.......#..............
+...........#..#.......
+#...........#.........
+...#.......#..........
+""".strip().split("\n")
+test = mapl(list, tests)
+
+
+# In[ ]:
+
+
+tests = """
+position=< 9,  1> velocity=< 0,  2>
+position=< 7,  0> velocity=<-1,  0>
+position=< 3, -2> velocity=<-1,  1>
+position=< 6, 10> velocity=<-2, -1>
+position=< 2, -4> velocity=< 2,  2>
+position=<-6, 10> velocity=< 2, -2>
+position=< 1,  8> velocity=< 1, -1>
+position=< 1,  7> velocity=< 1,  0>
+position=<-3, 11> velocity=< 1, -2>
+position=< 7,  6> velocity=<-1, -1>
+position=<-2,  3> velocity=< 1,  0>
+position=<-4,  3> velocity=< 2,  0>
+position=<10, -3> velocity=<-1,  1>
+position=< 5, 11> velocity=< 1, -2>
+position=< 4,  7> velocity=< 0, -1>
+position=< 8, -2> velocity=< 0,  1>
+position=<15,  0> velocity=<-2,  0>
+position=< 1,  6> velocity=< 1,  0>
+position=< 8,  9> velocity=< 0, -1>
+position=< 3,  3> velocity=<-1,  1>
+position=< 0,  5> velocity=< 0, -1>
+position=<-2,  2> velocity=< 2,  0>
+position=< 5, -2> velocity=< 1,  2>
+position=< 1,  4> velocity=< 2,  1>
+position=<-2,  7> velocity=< 2, -2>
+position=< 3,  6> velocity=<-1, -1>
+position=< 5,  0> velocity=< 1,  0>
+position=<-6,  0> velocity=< 2,  0>
+position=< 5,  9> velocity=< 1, -2>
+position=<14,  7> velocity=<-2,  0>
+position=<-3,  6> velocity=< 2, -1>
+""".strip().split("\n")
+
+
+# In[ ]:
+
+
+import re
+from lib.nbodysystem import Body, NBodySystem
+
+def populate_sys(los):
+  nbsys = NBodySystem()
+  for line in los:
+    nums = filterl(lambda it: it != '', re.split(r'[^\-\d]+', line))
+    nums = mapl(int, nums)
+    p = [nums[0], nums[1], 0]
+    v = [nums[2], nums[3], 0]
+    log.debug(f"nbsys add body; p={p} v={v}")
+    nbsys.add_body(Body(pos=p, vel=v))
+  return nbsys
+
+def get_extent(nbsys):
+  posns = mapl(lambda it: it.pos, nbsys.bodies)
+  x_posns = mapl(lambda it: it[0], posns)
+  y_posns = mapl(lambda it: it[1], posns)
+  x_min = min(x_posns)
+  x_max = max(x_posns)
+  y_min = min(y_posns)
+  y_max = max(y_posns)
+  d = {'x':[x_min, x_max], 'y':[y_min, y_max]}
+  d['x_ofs'] = x_min
+  d['y_ofs'] = y_min
+  d['x_len'] = x_max - x_min + 1
+  d['y_len'] = y_max - y_min + 1
+  #log.trace(f"[get_extent] exten={exten}")
+  return d
+      
+def get_repr(nbsys):
+  exten = get_extent(nbsys)
+  x_len, y_len = [ exten['x_len'], exten['y_len'] ]
+  x_ofs, y_ofs = [ exten['x_ofs'], exten['y_ofs'] ]
+  r = []
+  for y in range(y_len):
+    row = []
+    for x in range(x_len):
+      row.append('.')
+    r.append(row)
+  for b in nbsys.bodies:
+    #log.trace(f"represent body={b.pos}")
+    x,y,z = b.pos
+    r[y-y_ofs][x-x_ofs] = '#'
+    #r[x+x_ofs][y+y_ofs] = '#'
+  #r[0-y_ofs][0-x_ofs] = 'O'
+  return str.join("\n", mapl(lambda it: str.join('', it), r))
+
+def show_states(los, max_iters=10):
+  nbsys = populate_sys(los)
+  log.info(f"NBSystem {nbsys}")
+  exten = get_extent(nbsys)
+  log.info(f"NBSystem t0 extent @t=0: {exten}")
+  log.info("@ t = 0 ::")
+  if exten['x_len'] < 999 and exten['y_len'] < 999:
+    log.info(f"\n{get_repr(nbsys)}")
+  else:
+    log.debug("  large-dimensions, no plot")
+  
+  for t in range(1, max_iters+1):
+    nbsys.iterate_step()
+    exten = get_extent(nbsys)
+    crit = exten['x_len'] < 999 and exten['y_len'] < 999
+    if crit:
+      log.debug(f"NBSys extent @t={t}: {exten}")
+    elif t % 1_000 == 0:
+      log.debug(f"NBSys extent @t={t}: {exten}")
+    if crit:
+      r = get_repr(nbsys)
+      if t == 1 or "#####" in r:
+        log.debug(f"NBSys @t={t} extent: {exten}")
+        log.info(f"@ t = {t} ::")
+        log.info(f"\n{r}")
+    else:
+      if t % 1_000 == 0:
+        log.debug(f"@t={t}  large-dimensions, no plot")
+  log.info(f"terminated after {max_iters} steps")
+
+
+# In[ ]:
+
+
+show_states(tests)
+
+
+# In[ ]:
+
+
+ins = aoc.read_file_to_list('./in/day10.in')
+show_states(ins, max_iters=99_999)
 
 
 # ### Day 11
@@ -415,7 +629,229 @@ print("Day 07 b, # TODO")
 # In[ ]:
 
 
-# TODO
+def calc_power_level(x, y, grid_serial_num):
+  """
+  Find the fuel cell's rack ID, which is its X coordinate plus 10.
+  Begin with a power level of the rack ID times the Y coordinate.
+  Increase the power level by the value of the grid serial number (your puzzle input).
+  Set the power level to itself multiplied by the rack ID.
+  Keep only the hundreds digit of the power level (so 12345 becomes 3; numbers with no hundreds digit become 0).
+  Subtract 5 from the power level.
+  """
+  #log.trace(f"[calc_power_level({x}, {y}, {grid_serial_num})] called.")
+  rack_id = x + 10
+  tmp = rack_id * y
+  #log.trace(f"  rack-id = X+10 = {rack_id} ; mul-by-Y = {tmp}")
+  tmp += grid_serial_num
+  #log.trace(f"  add-grid_serial_num = {tmp}")
+  tmp *= rack_id
+  #log.trace(f"  mul-by-rack_id = {tmp}")
+  ltmp = list(str(tmp))
+  if len(ltmp) >= 3:
+    pl = int(ltmp[-3])
+  else:
+    pl = 0
+  #log.trace(f"  hundreads-thereof = {pl}")
+  pl -= 5
+  log.trace(f"[calc_power_level({x}, {y}, {grid_serial_num})] returns {pl}; rack_id={rack_id}")
+  return pl
+
+def populate_grid(xdim=300, ydim=300, grid_serial_num=0):
+  """Pupulate power grid. Grid-coordinates are 1-based here, standard=1..300 in each dimension."""
+  pgrid = {}
+  for y in range(1, ydim+1):
+    for x in range(1, xdim+1):
+      pgrid[tuple([x,y])] = calc_power_level(x, y, grid_serial_num)
+  return pgrid
+      
+
+
+# In[ ]:
+
+
+#log.setLevel(aoc.LOGLEVEL_TRACE) # logging.DEBUG
+#log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
+
+# power level of the fuel cell at 3,5 in a grid with serial number 8 => 4
+assert( 4 == calc_power_level(3, 5, 8) )
+
+# Fuel cell at  122,79, grid serial number 57: power level -5.
+assert( -5 == calc_power_level(122, 79, 57) )
+
+# Fuel cell at 217,196, grid serial number 39: power level  0.
+assert( 0 == calc_power_level(217, 196, 39) )
+
+#Fuel cell at 101,153, grid serial number 71: power level  4.
+assert( 4 == calc_power_level(101, 153, 71) )
+
+
+# In[ ]:
+
+
+def power_3x3_sum_at(x_start, y_start, pgrid):
+  rct = []
+  for y in range(y_start, y_start+3):
+    row = []
+    for x in range(x_start, x_start+3):
+      row.append( pgrid[tuple([x,y])] )
+    rct.append(row)
+  #log.trace(rct)
+  #log.trace(sum(mapl(sum, rct)))
+  log.debug(f"[power_3x3_sum_at({x_start}, {y_start}, pgrid)] returns {sum(mapl(sum, rct))}")
+  return sum(mapl(sum, rct))
+
+def find_opt_3x3_square(pgrid):
+  pmax = -99_999
+  xmax = -1
+  ymax = -1
+  for x in range(1, 300+1-3):
+    for y in range(1, 300+1-3):
+      pn = power_3x3_sum_at(x, y, pgrid)
+      if pn > pmax:
+        pmax = pn
+        xmax = x
+        ymax = y
+      elif pn == pmax:
+        #raise Exception(f"tie at {x}, {y} with {pmax}")
+        True
+  return {'x':xmax, 'y':ymax, 'power':pmax}
+
+pgrid18 = populate_grid(xdim=300, ydim=300, grid_serial_num=18)
+assert( 29 == power_3x3_sum_at(33, 45, pgrid18) )
+
+pgrid42 = populate_grid(xdim=300, ydim=300, grid_serial_num=42)
+assert( 30 == power_3x3_sum_at(21, 61, pgrid42) )
+
+res = find_opt_3x3_square(pgrid18)
+log.info(f"pgrid18 opt={res}")
+
+res = find_opt_3x3_square(pgrid42)
+log.info(f"pgrid42 opt={res}")
+
+
+# In[ ]:
+
+
+ins = int(aoc.read_file_to_str('./in/day11.in').strip())
+pgrid_sol1 = populate_grid(xdim=300, ydim=300, grid_serial_num=ins)
+res = find_opt_3x3_square(pgrid_sol1)
+log.info(f"pgrid-{ins} opt-square={res}")
+
+
+# In[ ]:
+
+
+import time
+
+def power_nxn_sum_at(num_len, x_start, y_start, pgrid):
+  #rct = []
+  #for y in range(y_start, y_start+num_len):
+  #  row = []
+  #  for x in range(x_start, x_start+num_len):
+  #    row.append( pgrid[tuple([x,y])] )
+  #  rct.append(row)
+  ##log.debug(f"[power_nxn_sum_at({num_len}, {x_start}, {y_start}, pgrid)] returns {sum(mapl(sum, rct))}")
+
+  #tups = []
+  #for y in range(y_start, y_start+num_len):
+  #  for x in range(x_start, x_start+num_len):
+  #    #row.append( pgrid[tuple([x,y])] )
+  #    tups.append(tuple([x,y]))
+  #return sum(mapl(lambda it: pgrid[it] ,tups))
+  return sum( [ pgrid[tuple([x,y])] for y in range(y_start, y_start+num_len) for x in range(x_start, x_start+num_len) ] )
+
+def find_opt_nxn_square(num_len, pgrid):
+  start_tm = int(time.time())
+  pmax = -99_999
+  xmax = -1
+  ymax = -1
+  ict = 0
+  for xs in range(1, 300+1-num_len):
+    for ys in range(1, 300+1-num_len):
+      #pn = power_nxn_sum_at(num_len, xs, ys, pgrid)
+      ict += 1
+      pn = sum( [ pgrid[tuple([x,y])] for y in range(ys, ys+num_len) for x in range(xs, xs+num_len) ] )
+      if pn > pmax:
+        pmax = pn
+        xmax = xs
+        ymax = ys
+  ict_str = f"{ict:,}".replace(',','_')
+  fullct = ict*(300-num_len)*(300-num_len)
+  fullct_str = f"{fullct:,}".replace(',','_')
+  res = {'len':num_len, 'x':xmax, 'y':ymax, 'power':pmax, 'tm_needed': int(time.time()-start_tm), 'iters': ict_str, 'fullct':fullct_str}
+  log.trace(f"find_opt_nxn_square({num_len}, pgrid) result={res}")
+  return res
+
+def find_opt_any_square(pgrid):
+  start_tm = int(time.time())
+  found_opts = []
+  pmax = -99_999
+  lmax = -1
+  last_pow = 0
+  for sqlen in range(1, 301):
+    if sqlen in [1, 2, 3] or sqlen % 10 == 0:
+      tm_needed = int(time.time()-start_tm)
+      log.debug(f"[find_opt_any_square] calculating, at square-len={sqlen} @{tm_needed}s")
+    found_opt = find_opt_nxn_square(sqlen, pgrid)
+    found_opts.append(found_opt)
+    if found_opt['power'] > pmax:
+      pmax = found_opt['power']
+      lmax = sqlen
+      tm_needed = int(time.time()-start_tm)
+      log.debug(f"new max-power >{found_opt['x']},{found_opt['y']},{sqlen}< power={pmax} square-len={sqlen} @{tm_needed}s {found_opt}")
+    if found_opt['power'] < 0 and last_pow < 0:
+      log.debug(f"[find_opt_any_square]  BREAK cycle, 2 consecutiv ngative max-powers @square-len={sqlen}")
+      break
+    last_pow = found_opt['power']
+  max_power = max(mapl(lambda it: it['power'], found_opts))
+  max_power_coord = filterl(lambda it: it['power']==max_power, found_opts)[0]
+  tm_needed = int(time.time()-start_tm)
+  max_power_coord['tm_total'] = tm_needed
+  log.debug(f"[find_opt_any_square(pgrid)] res=>{max_power_coord['x']},{max_power_coord['y']},{max_power_coord['len']}< result={max_power_coord} after @{tm_needed}s")
+  return max_power_coord
+
+
+# In[ ]:
+
+
+#log.setLevel(aoc.LOGLEVEL_TRACE) # logging.DEBUG
+#log.setLevel(logging.DEBUG)
+#log.setLevel(logging.INFO)
+
+assert( 29 == find_opt_nxn_square(3, pgrid18)['power'] )
+
+assert( 30 == find_opt_nxn_square(3, pgrid42)['power'] )
+
+
+# In[ ]:
+
+
+#log.setLevel(aoc.LOGLEVEL_TRACE) # logging.DEBUG
+#log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
+if EXEC_RESOURCE_HOGS:
+  log.info(f"Day 11 testing calculating, please wait...")
+  res = find_opt_any_square(pgrid18)
+  log.info(f"Day 11 testing solution, grid-18: >{res['x']},{res['y']},{res['len']}< {res}")
+
+
+# In[ ]:
+
+
+if EXEC_RESOURCE_HOGS:
+  log.info(f"Day 11 testing calculating, please wait...")
+  res = find_opt_any_square(pgrid42)
+  log.info(f"Day 11 testing solution, grid-42: >{res['x']},{res['y']},{res['len']}< {res}")
+
+
+# In[ ]:
+
+
+if EXEC_RESOURCE_HOGS:
+  log.info(f"Day 11 b calculating, please wait...")
+  res = find_opt_any_square(pgrid_sol1)
+  log.info(f"Day 11 b solution: >{res['x']},{res['y']},{res['len']}< {res}")
 
 
 # ### Day 12
@@ -1253,9 +1689,7 @@ log.info(f"Day 19 a result-mem={cpu.mem}; cpu-state={cpu.state}")
 # In[ ]:
 
 
-RUN_DOUBTFUL = False
-
-if RUN_DOUBTFUL: # this currently fails after _hours_ of runtime
+if EXEC_DOUBTFUL: # this currently fails after _hours_ of runtime
   cpu = CPU()
   cpu.prepare(ins)
   cpu.mem[0] = 1
